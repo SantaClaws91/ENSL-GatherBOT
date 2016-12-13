@@ -23,7 +23,7 @@ namespace SteamBot
 
         static void Main()
         {
-            SimpleLogger.SimpleLog.SetLogFile(logDir: ".\\Log", prefix: "Log", writeText: false);
+            SimpleLogger.SimpleLog.SetLogFile(logDir: ".\\Log", writeText: true);
             dynamic config = Json.Config.reloadConfig();
 
             user = config.Username;
