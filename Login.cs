@@ -3,8 +3,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
 using SteamKit2;
-using Newtonsoft.Json;
-
 
 namespace SteamBot
 {
@@ -19,17 +17,18 @@ namespace SteamBot
 
         static bool isRunning;
 
-        static string user, pass, authCode, twoFactorAuth;
+        static string user, pass, authCode, twoFactorAuth, loggingmsg;
 
         public static string steamFriendsName;
 
         static void Main()
         {
+            SimpleLogger.SimpleLog.SetLogFile(logDir: ".\\Log", prefix: "Log", writeText: false);
             dynamic config = Json.Config.reloadConfig();
 
             user = config.Username;
             pass = config.Password;
-            
+
             if (user == "" || pass == "")
             {
                 Console.Write("Username: ");
@@ -75,6 +74,7 @@ namespace SteamBot
 
             isRunning = true;
 
+            SimpleLogger.SimpleLog.Info("Connecting to Steam...");
             Console.WriteLine("Connecting to Steam...");
             steamClient.Connect();
             
@@ -88,13 +88,16 @@ namespace SteamBot
         {
             if (callback.Result != EResult.OK)
             {
-                Console.WriteLine("Unable to connect to Steam: {0}", callback.Result);
+                loggingmsg = String.Format("Unable to connect to Steam: {0}", callback.Result);
+                SimpleLogger.SimpleLog.Info(loggingmsg);
+                Console.WriteLine(loggingmsg);
 
                 isRunning = false;
                 return;
             }
-
-            Console.WriteLine("Connected to Steam! Logging in '{0}'...", user);
+            loggingmsg = String.Format("Connected to Steam! Logging in '{0}'", user);
+            SimpleLogger.SimpleLog.Info(loggingmsg);
+            Console.WriteLine(loggingmsg);
 
             byte[] sentryHash = null;
             if (File.Exists("sentry.bin"))
@@ -107,7 +110,7 @@ namespace SteamBot
             {
                 Username = user,
                 Password = pass,
-                
+
                 AuthCode = authCode,
 
                 TwoFactorCode = twoFactorAuth,
@@ -119,7 +122,7 @@ namespace SteamBot
 
         static void OnDisconnected(SteamClient.DisconnectedCallback callback)
         {
-
+            SimpleLogger.SimpleLog.Info("Disconnected from Steam");
             Console.WriteLine("Disconnected from Steam, reconnecting in 5...");
 
             Thread.Sleep(5000);
@@ -136,7 +139,7 @@ namespace SteamBot
             {
                 Console.WriteLine("This account is SteamGuard protected!");
 
-                if ( is2FA )
+                if (is2FA)
                 {
                     Console.Write("Please enter your 2 factor auth code from your authenticator app: ");
                     twoFactorAuth = Console.ReadLine();
@@ -152,19 +155,22 @@ namespace SteamBot
 
             if (callback.Result != EResult.OK)
             {
-                Console.WriteLine("Unable to logon to Steam: {0} / {1}", callback.Result, callback.ExtendedResult);
+                string loggingmsg = String.Format("Unable to logon to Steam: {0} / {1}", callback.Result, callback.ExtendedResult);
+                SimpleLogger.SimpleLog.Info(loggingmsg);
+                Console.WriteLine(loggingmsg);
 
                 isRunning = false;
                 return;
             }
 
+            SimpleLogger.SimpleLog.Info("Successfully logged on.");
             Console.WriteLine("Successfully logged on!");
 
-//            DBNation's Steam group chat:
-//            steamFriends.JoinChat(110338190880311047);
-//          Bitey's Steam group chat:
-//            steamFriends.JoinChat(110338190877848457);
-//            ENSL Group chat:
+            //            DBNation's Steam group chat:
+            //            steamFriends.JoinChat(110338190880311047);
+            //          Bitey's Steam group chat:
+            //            steamFriends.JoinChat(110338190877848457);
+            //            ENSL Group chat:
             steamFriends.JoinChat(103582791429543017);
 
             Gather.checkGatherState();
@@ -172,22 +178,25 @@ namespace SteamBot
 
         static void OnLoggedOff(SteamUser.LoggedOffCallback callback)
         {
-            Console.WriteLine("Logged off of Steam: {0}", callback.Result);
+            loggingmsg = String.Format("Logged off of Steam: {0}", callback.Result);
+            SimpleLogger.SimpleLog.Info(loggingmsg);
+            Console.WriteLine(loggingmsg);
         }
 
         static void OnMachineAuth(SteamUser.UpdateMachineAuthCallback callback)
         {
+            SimpleLogger.SimpleLog.Info("Updating sentryfile");
             Console.WriteLine("Updating sentryfile...");
 
             int fileSize;
             byte[] sentryHash;
             using (var fs = File.Open("sentry.bin", FileMode.OpenOrCreate, FileAccess.ReadWrite))
             {
-                fs.Seek( callback.Offset, SeekOrigin.Begin );
-                fs.Write( callback.Data, 0, callback.BytesToWrite );
+                fs.Seek(callback.Offset, SeekOrigin.Begin);
+                fs.Write(callback.Data, 0, callback.BytesToWrite);
                 fileSize = (int)fs.Length;
 
-                fs.Seek( 0, SeekOrigin.Begin );
+                fs.Seek(0, SeekOrigin.Begin);
                 using (var sha = new SHA1CryptoServiceProvider())
                 {
                     sentryHash = sha.ComputeHash(fs);
@@ -213,6 +222,7 @@ namespace SteamBot
             });
 
             Console.WriteLine("Done!");
+            SimpleLogger.SimpleLog.Info("Updated sentryfile");
         }
 
         static void OnAccountInfo(SteamUser.AccountInfoCallback callback)
@@ -225,8 +235,10 @@ namespace SteamBot
             string personaName = callback.PersonaName;
             SteamID steamID = callback.SteamID;
 
-            Console.WriteLine("{0} is now a friend of {1}'s", personaName, user);
-            
+            loggingmsg = String.Format("{0} is now a friend of {1}'s", personaName, user);
+            SimpleLogger.SimpleLog.Info(loggingmsg);
+            Console.WriteLine(loggingmsg);
+
             string Greetings = string.Format(
                 "Hello {0}. Thank you for adding the bot.\nUse !info to request gather information or wait for the automated responses.",
                 personaName
@@ -262,7 +274,7 @@ namespace SteamBot
         {
             if (callback.ChatMsgType == EChatEntryType.ChatMsg)
             {
-//                Console.WriteLine("Message received in {0}'s group chat: {1} says: {2}", callback.ChatRoomID, callback.ChatterID, callback.Message);
+                //                Console.WriteLine("Message received in {0}'s group chat: {1} says: {2}", callback.ChatRoomID, callback.ChatterID, callback.Message);
                 UserHandler.steamBotCommandsHandling(callback.Message, callback.ChatterID, callback.ChatRoomID);
             }
         }
@@ -270,12 +282,14 @@ namespace SteamBot
         static void OnGroupChatInvite(SteamFriends.ChatInviteCallback callback)
         {
             steamFriends.JoinChat(callback.ChatRoomID);
-            Console.WriteLine(user + " has been invited to " + callback.ChatRoomName + "'s group chat: "+ callback.ChatRoomID);
+            Console.WriteLine(user + " has been invited to " + callback.ChatRoomName + "'s group chat: " + callback.ChatRoomID);
         }
 
         static void OnGroupChatEnter(SteamFriends.ChatEnterCallback callback)
         {
-            Console.WriteLine("Successfully entered: {0}'s group chat: {1}\n", callback.ChatRoomName, callback.ChatID);
+            loggingmsg = String.Format("Successfully entered: {0}'s group chat: {1}\n", callback.ChatRoomName, callback.ChatID);
+            SimpleLogger.SimpleLog.Info(loggingmsg);
+            Console.WriteLine(loggingmsg);
         }
 
         static void OnProfileInfo(SteamFriends.ProfileInfoCallback callback)
@@ -287,6 +301,6 @@ namespace SteamBot
         {
             steamFriendsName = callback.Name;
         }
-        
+
     }
 }
