@@ -39,7 +39,7 @@ namespace SteamBot
                     case "election":
                         if (state != "gathering")
                         { break; }
-                        gatherServer.AnnounceServer(gatherInfo_);
+                        gatherServer.AnnounceServer(gatherInfo);
                         state = "election";
                         break;
                     case "selection":
@@ -49,7 +49,7 @@ namespace SteamBot
                         if (gatherers < 8 && state == "selection" && current_status == "gathering")
                         {
                             //Inform joined members only about Server info here.
-                            gatherServer.AnnounceServer(gatherInfo_);
+                            gatherServer.AnnounceServer(gatherInfo);
                             state = "";
 
                             //If a gather starts, we might as well wait 30 minutes (or more) before checking again. This also avoids the regather issues.
