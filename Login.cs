@@ -165,15 +165,6 @@ namespace SteamBot
 
             SimpleLogger.SimpleLog.Info("Successfully logged on.");
             Console.WriteLine("Successfully logged on!");
-
-            //            DBNation's Steam group chat:
-            //            steamFriends.JoinChat(110338190880311047);
-            //          Bitey's Steam group chat:
-            //            steamFriends.JoinChat(110338190877848457);
-            //            ENSL Group chat:
-            steamFriends.JoinChat(103582791429543017);
-
-            Gather.checkGatherState();
         }
 
         static void OnLoggedOff(SteamUser.LoggedOffCallback callback)
@@ -240,7 +231,7 @@ namespace SteamBot
             Console.WriteLine(loggingmsg);
 
             string Greetings = string.Format(
-                "Hello {0}. Thank you for adding the bot.\nUse !info to request gather information or wait for the automated responses.",
+                "Hello {0}. Thank you for adding the bot.",
                 personaName
                 );
 
