@@ -75,29 +75,7 @@ namespace SteamBot
                     Console.WriteLine("Config was reloaded by user: {0}", steamID);
                     return;
                 #endregion
-
-                #region Request Gather Status
-                case "!info":
-                case "!status":
-                    gatherInfo = Gather.getGatherInfo();
-                    string current_state = gatherInfo["state"];
-                    int gatherers = gatherInfo["gatherers"].Count;
-                    gatherInfo = gatherInfo["gatherers"];
-                    string status = Gather.returnStatus(
-                        current_state, 
-                        gatherers, 
-                        gatherInfo, 
-                        steamID, 
-                        false
-                        );
-                    SteamBot.steamFriends.SendChatMessage(
-                        steamID,
-                        EChatEntryType.ChatMsg,
-                        status
-                        );
-                    return;
-                #endregion
-
+                    
                 #region Am I admin?
                 case "!amiadmin":
                     SteamBot.steamFriends.RequestFriendInfo(steamID, EClientPersonaStateFlag.PlayerName);
@@ -160,43 +138,6 @@ namespace SteamBot
                     return;
                 #endregion
 
-                #region Simulate Gather Announcement
-                case "#gathertest":
-                    args = separate(3, ' ', Message);
-                    if (args[0] == "-1") { return; }
-
-                    gatherInfo = Gather.getGatherInfo();
-                    gatherInfo = gatherInfo["gatherers"];
-
-                    string gatherTest = Gather.returnStatus(
-                        args[2],
-                        Convert.ToInt32(args[1]),
-                        gatherInfo,
-                        steamID,
-                        false
-                        );
-                    SteamBot.steamFriends.SendChatMessage(
-                        steamID,
-                        EChatEntryType.ChatMsg,
-                        gatherTest
-                        );
-
-                    return;
-                #endregion
-
-                #region Check Gather Info Print
-                case "#checkgather":
-                    Gather.checkGatherState(true);
-                    return;
-                #endregion
-
-                #region Announce Gather Status
-                case "#anngather":
-                    gatherInfo = Gather.getGatherInfo();
-                    Gather.announceGathering(gatherInfo);
-                    return;
-                #endregion
-
                 #region Edit Message Conditions
                 case "!msgconditions":
                     args = separate(1, ' ', Message);
@@ -204,14 +145,6 @@ namespace SteamBot
 
                     friendsList = Json.Config.readFriendsList();
                     Json.Config.addMsgOpt(friendsList, steamID, args[1]);
-                    return;
-                #endregion
-
-                #region Server Voting Test
-                case "#testserver":
-                    Console.WriteLine("Testing server...");
-                    gatherInfo = Gather.getGatherInfo();
-                    gatherServer.AnnounceServer(gatherInfo);
                     return;
                 #endregion
             }
