@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Net;
 using Newtonsoft.Json;
@@ -9,15 +9,13 @@ namespace SteamBot
 {
     class Gather
     {
-        static string state = "";
-        static dynamic gatherInfo_;
-        static int delay;
+        static string state;
 
         public static void checkGatherState(bool demand = false)
         {
+            int delay = 15; //seconds
             try
             {
-                delay = 1000;
                 dynamic gatherInfo = getGatherInfo();
                 string current_status = gatherInfo["state"];
 
@@ -25,57 +23,43 @@ namespace SteamBot
                 if (demand)
                 {
                     Console.WriteLine(
-                        "\ncurrent_status: {0}\nstate: {1}\ngatherers: {2}\n",
+                        "\ncurrent_status: {0}\ngatherers: {1}\n",
                         current_status,
-                        state,
                         gatherInfo["gatherers"].Count
                         );
                     return;
                 }
                 #endregion
 
-                switch (current_status)
+                if (current_status != state)
                 {
-                    case "election":
-                        if (state != "gathering")
-                        { break; }
-                        gatherServer.AnnounceServer(gatherInfo);
-                        state = "election";
-                        break;
-                    case "selection":
-                    case "gathering":
-                        int gatherers = gatherInfo["gatherers"].Count;
-
-                        if (gatherers < 8 && state == "selection" && current_status == "gathering")
-                        {
-                            //Inform joined members only about Server info here.
-                            gatherServer.AnnounceServer(gatherInfo);
-                            state = "";
-
-                            //If a gather starts, we might as well wait 30 minutes (or more) before checking again. This also avoids the regather issues.
-                            delay = 30 * 60 * 1000;
+                    switch (current_status)
+                    {
+                        case "gathering":
+                            if (gatherInfo["gatherers"].Count >= 8)
+                            {
+                                announceGathering(gatherInfo);
+                                state = "gathering";
+                            }
                             break;
-                        }
-
-                        if (gatherers >= 8 && current_status != state)
-                        {
-                            //This should break; in case of regathers - to reduce bot spam. (Depricated)
-                            
+                        case "election":
                             announceGathering(gatherInfo);
-                            state = current_status;
-                        }
-                        if (current_status == "selection")
-                        {
-                            gatherInfo_ = gatherInfo;
-                        }
-                        break;
+                            state = "election";
+                            break;
+                        case "selection":
+                            gatherServer.AnnounceServer(gatherInfo);
+                            state = "selection";
+
+                            delay = 30 * 60; //seconds
+                            break;
+                    }
                 }
             }
             catch (Exception e)
             {
-                SimpleLogger.SimpleLog.Error(e.ToString());
+                SimpleLogger.SimpleLog.Log(e);
             }
-            Task.Delay(delay).ContinueWith(x => checkGatherState());
+            Task.Delay(delay*1000).ContinueWith(x => checkGatherState());
         }
         public static dynamic getGatherInfo()
         {
@@ -90,7 +74,7 @@ namespace SteamBot
                 }
                 catch (Exception e)
                 {
-                    SimpleLogger.SimpleLog.Error(e.ToString());
+                    SimpleLogger.SimpleLog.Log(e);
                     return "";
                 }
             }
@@ -136,16 +120,14 @@ namespace SteamBot
             {
                 return announcement;
             }
-            #endregion
+            #endregion 
 
             switch (current_state)
             {
                 case "election":
                 case "selection":
                     if (announce == true) { break; }
-                    announcement = string.Format(
-                        "Gather is starting. Sign up for the next one at http://gathers.ensl.org/"
-                        );
+                    announcement = "Gather is starting. Sign up for the next one at http://gathers.ensl.org/";
                     break;
 
                 case "gathering":
