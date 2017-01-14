@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
@@ -105,29 +105,40 @@ namespace SteamBot
                 byte[] sentryFile = File.ReadAllBytes("sentry.bin");
                 sentryHash = CryptoHelper.SHAHash(sentryFile);
             }
+            try {
+            	steamUser.LogOn(new SteamUser.LogOnDetails
+            	{
+            		Username = user,
+            		Password = pass,
 
-            steamUser.LogOn(new SteamUser.LogOnDetails
-            {
-                Username = user,
-                Password = pass,
+            		AuthCode = authCode,
 
-                AuthCode = authCode,
+            		TwoFactorCode = twoFactorAuth,
 
-                TwoFactorCode = twoFactorAuth,
-
-                SentryFileHash = sentryHash,
+            		SentryFileHash = sentryHash,
+            	}
+            	);
             }
-            );
+            catch (Exception ex)
+            {
+            	SimpleLogger.SimpleLog.Log(ex);
+            }
         }
 
         static void OnDisconnected(SteamClient.DisconnectedCallback callback)
         {
-            SimpleLogger.SimpleLog.Info("Disconnected from Steam");
-            Console.WriteLine("Disconnected from Steam, reconnecting in 5...");
+            SimpleLogger.SimpleLog.Warning("Disconnected from Steam");
+            try {
+                Console.WriteLine("Disconnected from Steam, reconnecting in 5...");
 
-            Thread.Sleep(5000);
+                Thread.Sleep(5000);
 
-            steamClient.Connect();
+                steamClient.Connect();
+            }
+            catch (Exception ex)
+            {
+                SimpleLogger.SimpleLog.Log(ex);
+            }
         }
 
         static void OnLoggedOn(SteamUser.LoggedOnCallback callback)
@@ -152,7 +163,7 @@ namespace SteamBot
 
                 return;
             }
-
+            
             if (callback.Result != EResult.OK)
             {
                 string loggingmsg = String.Format("Unable to logon to Steam: {0} / {1}", callback.Result, callback.ExtendedResult);
@@ -162,7 +173,6 @@ namespace SteamBot
                 isRunning = false;
                 return;
             }
-
             SimpleLogger.SimpleLog.Info("Successfully logged on.");
             Console.WriteLine("Successfully logged on!");
 
@@ -171,7 +181,7 @@ namespace SteamBot
             //          Bitey's Steam group chat:
             //            steamFriends.JoinChat(110338190877848457);
             //            ENSL Group chat:
-            steamFriends.JoinChat(103582791429543017);
+            //			steamFriends.JoinChat(103582791429543017);
 
             Gather.checkGatherState();
         }
@@ -179,7 +189,7 @@ namespace SteamBot
         static void OnLoggedOff(SteamUser.LoggedOffCallback callback)
         {
             loggingmsg = String.Format("Logged off of Steam: {0}", callback.Result);
-            SimpleLogger.SimpleLog.Info(loggingmsg);
+            SimpleLogger.SimpleLog.Warning(loggingmsg);
             Console.WriteLine(loggingmsg);
         }
 
