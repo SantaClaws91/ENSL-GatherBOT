@@ -10,6 +10,8 @@ namespace SteamBot
     class Gather
     {
         static string state;
+        const int delayCycles = 240;
+        static int resetCountdown = delayCycles; //units in: delay cycles
 
         public static void checkGatherState(bool demand = false)
         {
@@ -41,6 +43,8 @@ namespace SteamBot
                                 announceGathering(gatherInfo);
                                 state = "gathering";
                             }
+                            resetCountdown = resetCountdown--;
+                            if (resetCountdown == 0) { state = ""; }
                             break;
                         case "election":
                             announceGathering(gatherInfo);
@@ -51,6 +55,7 @@ namespace SteamBot
                             state = "selection";
 
                             delay = 30 * 60; //seconds
+                            resetCountdown = delayCycles;
                             break;
                     }
                 }
@@ -120,7 +125,7 @@ namespace SteamBot
             {
                 return announcement;
             }
-            #endregion 
+            #endregion
 
             switch (current_state)
             {
