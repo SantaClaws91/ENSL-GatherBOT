@@ -130,6 +130,8 @@ namespace SteamBot
             SimpleLogger.SimpleLog.Warning("Disconnected from Steam");
             try {
                 Console.WriteLine("Disconnected from Steam, reconnecting in 5...");
+            	Console.WriteLine(callback.ToString());
+            	SimpleLogger.SimpleLog.Warning(callback.ToString());
 
                 Thread.Sleep(5000);
 
