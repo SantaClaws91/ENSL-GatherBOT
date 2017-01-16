@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using Newtonsoft.Json;
+using System;
 
 using SteamKit2;
 
@@ -30,6 +24,7 @@ namespace SteamBot
                     message
                     );
             }
+            SimpleLogger.SimpleLog.Info(message);
         }
 
         static void chatCommands(string command, string Message, SteamID steamID)
@@ -61,8 +56,8 @@ namespace SteamBot
                     Json.Config.addAdmin(args[1]);
 
                     SteamBot.steamFriends.SendChatMessage(
-                        steamID, 
-                        EChatEntryType.ChatMsg, 
+                        steamID,
+                        EChatEntryType.ChatMsg,
                         "User was added as admin. ID: " + args[1]
                         );
                     return;
@@ -84,10 +79,10 @@ namespace SteamBot
                     int gatherers = gatherInfo["gatherers"].Count;
                     gatherInfo = gatherInfo["gatherers"];
                     string status = Gather.returnStatus(
-                        current_state, 
-                        gatherers, 
-                        gatherInfo, 
-                        steamID, 
+                        current_state,
+                        gatherers,
+                        gatherInfo,
+                        steamID,
                         false
                         );
                     SteamBot.steamFriends.SendChatMessage(
@@ -98,30 +93,36 @@ namespace SteamBot
                     return;
                 #endregion
 
+                #region Help
+                case "!help":
+                    dynamic config = Json.Config.reloadConfig();
+                    string helpText = config["!help"];
+                    SteamBot.steamFriends.SendChatMessage(steamID, EChatEntryType.ChatMsg, 
+                        helpText
+                        );
+                    return;
+                #endregion
+
                 #region Am I admin?
                 case "!amiadmin":
                     SteamBot.steamFriends.RequestFriendInfo(steamID, EClientPersonaStateFlag.PlayerName);
                     string name = SteamBot.steamFriendsName;
 
-                    Console.WriteLine();
-
                     Json.Config.reloadConfig();
                     if (Json.Config.isAdmin(steamID) == true)
                     {
                         SteamBot.steamFriends.SendChatMessage(
-                            steamID, 
-                            EChatEntryType.ChatMsg, 
+                            steamID,
+                            EChatEntryType.ChatMsg,
                             name + " has admin privileges!"
                             );
+                        return;
                     }
-                    else
-                    {
-                        SteamBot.steamFriends.SendChatMessage(
-                            steamID, 
-                            EChatEntryType.ChatMsg, 
-                            name + " does not have admin privileges!"
-                            );
-                    }
+                    SteamBot.steamFriends.SendChatMessage(
+                        steamID,
+                        EChatEntryType.ChatMsg,
+                        name + " does not have admin privileges!"
+                        );
                     return;
                 #endregion
 
@@ -139,8 +140,8 @@ namespace SteamBot
                 #region Set Persona Name
                 case "#personaname":
                     args = separate(1, ' ', Message);
-                    if (args[0] == "-1")  { return; }
-                    
+                    if (args[0] == "-1") { return; }
+
                     SteamBot.steamFriends.SetPersonaName(args[1]);
                     return;
                 #endregion
@@ -154,6 +155,18 @@ namespace SteamBot
                     return;
                 #endregion
 
+                #region Mute/Unmute
+                case "!mute":
+                    friendsList = Json.Config.readFriendsList();
+                    Json.Config.addMsgOpt(friendsList, steamID, "non");
+                    return;
+
+                case "!unmute":
+                    friendsList = Json.Config.readFriendsList();
+                    Json.Config.addMsgOpt(friendsList, steamID, "all");
+                    return;
+                #endregion
+
                 #region Dump Friendslist
                 case "#dumpfriendslist":
                     Json.Config.dumpFriendslist();
@@ -162,16 +175,16 @@ namespace SteamBot
 
                 #region Simulate Gather Announcement
                 case "#gathertest":
-                    args = separate(3, ' ', Message);
+                    args = separate(2, ' ', Message);
                     if (args[0] == "-1") { return; }
 
                     gatherInfo = Gather.getGatherInfo();
-                    gatherInfo = gatherInfo["gatherers"];
+                    dynamic enslusers = gatherInfo["gatherers"];
 
                     string gatherTest = Gather.returnStatus(
                         args[2],
                         Convert.ToInt32(args[1]),
-                        gatherInfo,
+                        enslusers,
                         steamID,
                         false
                         );
@@ -200,7 +213,13 @@ namespace SteamBot
                 #region Edit Message Conditions
                 case "!msgconditions":
                     args = separate(1, ' ', Message);
-                    if (args[0] == "-1") { return; }
+                    if (args[0] == "-1") {
+                        string str = "!msgconditions [option]\nOnline: Only announce if your personastatus on steam is set to \"Online\"(Default setting)\nAway: Announce if your personastatus on steam is set to \"Online\" or \"Away\"\nBusy: Announce if your personastatus on steam is set to \"Online\" or \"Busy\"\nAll: Announce if your personastatus on steam is set to anything other than \"Offline\"\nNon: Disable gather announcing";
+                        SteamBot.steamFriends.SendChatMessage(steamID, EChatEntryType.ChatMsg,
+                        str
+                        );
+                        return;
+                    }
 
                     friendsList = Json.Config.readFriendsList();
                     Json.Config.addMsgOpt(friendsList, steamID, args[1]);
@@ -213,7 +232,7 @@ namespace SteamBot
                     gatherInfo = Gather.getGatherInfo();
                     gatherServer.AnnounceServer(gatherInfo);
                     return;
-                #endregion
+                    #endregion
             }
             SteamBot.steamFriends.SendChatMessage(
                 steamID,
@@ -278,7 +297,7 @@ namespace SteamBot
 
                 #region Request Gather Status
                 case "!status":
-                 
+
 
                     break;
                 #endregion
@@ -315,7 +334,7 @@ namespace SteamBot
                     args = separate(1, ' ', Message);
                     SteamBot.steamFriends.SetPersonaName(args[1]);
                     break;
-                #endregion
+                    #endregion
             }
         }
 
