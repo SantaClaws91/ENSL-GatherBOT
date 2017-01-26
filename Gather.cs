@@ -38,6 +38,10 @@ namespace SteamBot
                     switch (current_status)
                     {
                         case "gathering":
+                            if (state == "election") {
+                        		state = "gathering";
+                        		break; 
+                        	}                            
                             if (gatherInfo["gatherers"].Count >= 8)
                             {
                                 announceGathering(gatherInfo);
