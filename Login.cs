@@ -95,7 +95,7 @@ namespace SteamBot
                 isRunning = false;
                 return;
             }
-            loggingmsg = String.Format("Connected to Steam! Logging in '{0}'", user);
+            loggingmsg = String.Format("Connected to Steam!");
             SimpleLogger.SimpleLog.Info(loggingmsg);
             Console.WriteLine(loggingmsg);
 
@@ -106,6 +106,10 @@ namespace SteamBot
                 sentryHash = CryptoHelper.SHAHash(sentryFile);
             }
             try {
+            	loggingmsg = String.Format("Logging in '{0}'", user);
+            	SimpleLogger.SimpleLog.Info(loggingmsg);
+            	Console.WriteLine(loggingmsg);
+            	
             	steamUser.LogOn(new SteamUser.LogOnDetails
             	{
             		Username = user,
@@ -130,8 +134,6 @@ namespace SteamBot
             SimpleLogger.SimpleLog.Warning("Disconnected from Steam");
             try {
                 Console.WriteLine("Disconnected from Steam, reconnecting in 5...");
-            	Console.WriteLine(callback.ToString());
-            	SimpleLogger.SimpleLog.Warning(callback.ToString());
 
                 Thread.Sleep(5000);
 
@@ -148,9 +150,14 @@ namespace SteamBot
             bool isSteamGuard = callback.Result == EResult.AccountLogonDenied;
             bool is2FA = callback.Result == EResult.AccountLoginDeniedNeedTwoFactor;
 
+            string loggingmsg = callback.Result.ToString();
+            SimpleLogger.SimpleLog.Info(loggingmsg);
+
             if (isSteamGuard || is2FA)
             {
-                Console.WriteLine("This account is SteamGuard protected!");
+            	loggingmsg = "This account is SteamGuard protected!";
+                Console.WriteLine(loggingmsg);
+                SimpleLogger.SimpleLog.Warning(loggingmsg);
 
                 if (is2FA)
                 {
@@ -168,15 +175,21 @@ namespace SteamBot
             
             if (callback.Result != EResult.OK)
             {
-                string loggingmsg = String.Format("Unable to logon to Steam: {0} / {1}", callback.Result, callback.ExtendedResult);
-                SimpleLogger.SimpleLog.Info(loggingmsg);
+                loggingmsg = String.Format("Unable to logon to Steam: {0} / {1}", callback.Result, callback.ExtendedResult);
+                SimpleLogger.SimpleLog.Warning(loggingmsg);
                 Console.WriteLine(loggingmsg);
-
-                isRunning = false;
-                return;
             }
-            SimpleLogger.SimpleLog.Info("Successfully logged on.");
-            Console.WriteLine("Successfully logged on!");
+            else if (callback.Result.ToString() == "TryAnotherCM" || callback.Result.ToString() == "ServiceUnavailable")
+            {
+            	loggingmsg = "Retrying in 5 minutes...";
+            	Console.WriteLine(loggingmsg);
+            	Thread.Sleep(300000);
+            	steamClient.Connect();
+            }
+            else {
+            loggingmsg = "Successfully logged on.";
+            SimpleLogger.SimpleLog.Info(loggingmsg);
+            Console.WriteLine(loggingmsg);
 
             //            DBNation's Steam group chat:
             //            steamFriends.JoinChat(110338190880311047);
@@ -186,6 +199,7 @@ namespace SteamBot
             //			steamFriends.JoinChat(103582791429543017);
 
             Gather.checkGatherState();
+        	}
         }
 
         static void OnLoggedOff(SteamUser.LoggedOffCallback callback)
